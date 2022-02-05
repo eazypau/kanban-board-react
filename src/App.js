@@ -1,5 +1,7 @@
+// import { useRef } from "react";
 import { useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import AddTaskControl from "./components/AddTaskControl";
 
 function App() {
 	const dummyTasks = [
@@ -36,7 +38,17 @@ function App() {
 		},
 	};
 	const [columns, setColumns] = useState(columnsList);
+	const [addingNewTask, setAddingNewTask] = useState(false)
+	const [selectedColumn, setSelectedColumn] = useState("")
 
+	const changeNewTaskStatus = (selectedId) => {
+		// console.log("changing..........");
+		setSelectedColumn(selectedId)
+		if (addingNewTask) setAddingNewTask(false);
+		else setAddingNewTask(true);
+		console.log("...",addingNewTask);
+		console.log("...", selectedColumn);
+	};
 	const onDragEnd = (result, columns, setColumns) => {
 		console.log(result);
 		if (!result.destination) return;
@@ -48,19 +60,19 @@ function App() {
 			const sourceItems = [...sourceColumn.items];
 			const destItems = [...destColumn.items];
 			const [removed] = sourceItems.splice(source.index, 1);
-			destItems.splice(destination.index, 0, removed)
+			destItems.splice(destination.index, 0, removed);
 			setColumns({
 				// this is spread syntax to tell that the rest of the object remains the same
 				...columns,
-				[source.droppableId]:{
+				[source.droppableId]: {
 					...sourceColumn,
-					items: sourceItems
+					items: sourceItems,
 				},
 				[destination.droppableId]: {
 					...destColumn,
-					items: destItems
-				}
-			})
+					items: destItems,
+				},
+			});
 		} else {
 			// reference to column's key
 			const column = columns[source.droppableId];
@@ -108,8 +120,9 @@ function App() {
 																	>
 																		<p className="h-24 overflow-auto example">{item.content}</p>
 																		<div className="absolute bottom-0 right-0 mr-2 mb-1">
-																			<i className="bi bi-check-square mr-1 text-xl hover:text-green-500"></i>
-																			<i className="bi bi-trash text-xl hover:text-red-600"></i>
+																			<i className="bi bi-pencil-square mr-2 text-xl hover:opacity-60 cursor-pointer"></i>
+																			<i className="bi bi-check-square mr-2 text-xl hover:opacity-60 cursor-pointer"></i>
+																			<i className="bi bi-trash text-xl hover:opacity-60 cursor-pointer"></i>
 																		</div>
 																	</div>
 																);
@@ -117,7 +130,16 @@ function App() {
 														</Draggable>
 													);
 												})}
+												<div className="mt-3 pl-2">
+													{/* <p className="text-gray-500 hover:text-black cursor-pointer">
+														<i class="bi bi-plus-lg"></i> New Task
+													</p> */}
+													<AddTaskControl columnId={id} clickedColumnId={selectedColumn} isAdding={addingNewTask} changeNewTaskStatus={changeNewTaskStatus} />
+												</div>
 											</div>
+											{/* <div className="mt-2">
+												<p><i class="bi bi-plus-lg"></i> New Task</p>
+											</div> */}
 											{provided.placeholder}
 										</div>
 									);
