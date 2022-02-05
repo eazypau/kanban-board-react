@@ -44,11 +44,29 @@ function App() {
 	const changeNewTaskStatus = (selectedId) => {
 		// console.log("changing..........");
 		setSelectedColumn(selectedId)
-		if (addingNewTask) setAddingNewTask(false);
-		else setAddingNewTask(true);
-		console.log("...",addingNewTask);
-		console.log("...", selectedColumn);
+		addingNewTask ? setAddingNewTask(false) : setAddingNewTask(true)
+		// console.log("...",addingNewTask);
+		// console.log("...", selectedColumn);
 	};
+	const addNewTodoIntoColumn = (content, columnId) => {
+		console.log("content:", content,  "columnId", columnId);
+		if (!content) return alert("Please enter text into the input field provided.")
+		// steps to add todo
+		const sourceColumn = columns[columnId]
+		console.log(sourceColumn);
+		const columnItems = [...sourceColumn.items]
+		columnItems.push({id: String(Math.random()), content: content})
+		setColumns({
+			...columns,
+			[columnId]: {
+				...sourceColumn,
+				items: columnItems
+			}
+		})
+		// clear selectedColumn
+		setSelectedColumn("")
+		setAddingNewTask(false)
+	}
 	const onDragEnd = (result, columns, setColumns) => {
 		console.log(result);
 		if (!result.destination) return;
@@ -134,7 +152,7 @@ function App() {
 													{/* <p className="text-gray-500 hover:text-black cursor-pointer">
 														<i class="bi bi-plus-lg"></i> New Task
 													</p> */}
-													<AddTaskControl columnId={id} clickedColumnId={selectedColumn} isAdding={addingNewTask} changeNewTaskStatus={changeNewTaskStatus} />
+													<AddTaskControl columnId={id} clickedColumnId={selectedColumn} isAdding={addingNewTask} changeNewTaskStatus={changeNewTaskStatus} addNewTodoIntoColumn={addNewTodoIntoColumn} />
 												</div>
 											</div>
 											{/* <div className="mt-2">
