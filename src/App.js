@@ -4,6 +4,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import AddTaskControl from "./components/AddTaskControl";
 
 function App() {
+	// todo: make it save and read from localstorage
 	const dummyTasks = [
 		{ id: String(Math.random()), content: "task 1" },
 		{ id: String(Math.random()), content: "task 2" },
@@ -38,35 +39,72 @@ function App() {
 		},
 	};
 	const [columns, setColumns] = useState(columnsList);
-	const [addingNewTask, setAddingNewTask] = useState(false)
-	const [selectedColumn, setSelectedColumn] = useState("")
+	const [addingNewTask, setAddingNewTask] = useState(false);
+	const [selectedColumn, setSelectedColumn] = useState("");
 
 	const changeNewTaskStatus = (selectedId) => {
 		// console.log("changing..........");
-		setSelectedColumn(selectedId)
-		addingNewTask ? setAddingNewTask(false) : setAddingNewTask(true)
+		setSelectedColumn(selectedId);
+		addingNewTask ? setAddingNewTask(false) : setAddingNewTask(true);
 		// console.log("...",addingNewTask);
 		// console.log("...", selectedColumn);
 	};
 	const addNewTodoIntoColumn = (content, columnId) => {
-		console.log("content:", content,  "columnId", columnId);
-		if (!content) return alert("Please enter text into the input field provided.")
+		// console.log("content:", content,  "columnId", columnId);
+		if (!content) return alert("Please enter text into the input field provided.");
 		// steps to add todo
-		const sourceColumn = columns[columnId]
-		console.log(sourceColumn);
-		const columnItems = [...sourceColumn.items]
-		columnItems.push({id: String(Math.random()), content: content})
+		const sourceColumn = columns[columnId];
+		// console.log(sourceColumn);
+		const sourceItems = [...sourceColumn.items];
+		sourceItems.push({ id: String(Math.random()), content: content });
 		setColumns({
 			...columns,
 			[columnId]: {
 				...sourceColumn,
-				items: columnItems
-			}
-		})
+				items: sourceItems,
+			},
+		});
 		// clear selectedColumn
-		setSelectedColumn("")
-		setAddingNewTask(false)
-	}
+		setSelectedColumn("");
+		setAddingNewTask(false);
+	};
+	const moveTaskToCompleted = ({ columnId, taskIndex }) => {
+		console.log("completed");
+		const sourceColumn = columns[columnId];
+		const sourceItems = [...sourceColumn.items];
+		const destColumn = columns.columnFour;
+		const destItems = [...destColumn.items];
+		// splice task from current column
+		const [removed] = sourceItems.splice(taskIndex, 1);
+		// add task to completed column
+		destItems.push(removed);
+		// save into columns
+		setColumns({
+			...columns,
+			[columnId]: {
+				...sourceColumn,
+				items: sourceItems,
+			},
+			columnFour: {
+				...destColumn,
+				items: destItems,
+			},
+		});
+	};
+	const removeTaskFromColumn = ({columnId, taskIndex}) => {
+		console.log("removing task");
+		const sourceColumn = columns[columnId];
+		const sourceItems = [...sourceColumn.items];
+		const [removed] = sourceItems.splice(taskIndex, 1);
+		console.log("removed task:", removed);
+		setColumns({
+			...columns,
+			[columnId]: {
+				...sourceColumn,
+				items: sourceItems,
+			},
+		});
+	};
 	const onDragEnd = (result, columns, setColumns) => {
 		console.log(result);
 		if (!result.destination) return;
@@ -139,8 +177,18 @@ function App() {
 																		<p className="h-24 overflow-auto example">{item.content}</p>
 																		<div className="absolute bottom-0 right-0 mr-2 mb-1">
 																			<i className="bi bi-pencil-square mr-2 text-xl hover:opacity-60 cursor-pointer"></i>
-																			<i className="bi bi-check-square mr-2 text-xl hover:opacity-60 cursor-pointer"></i>
-																			<i className="bi bi-trash text-xl hover:opacity-60 cursor-pointer"></i>
+																			<i
+																				onClick={() => {
+																					moveTaskToCompleted({ columnId: id, taskIndex: index });
+																				}}
+																				className="bi bi-check-square mr-2 text-xl hover:opacity-60 cursor-pointer"
+																			></i>
+																			<i
+																				onClick={() => {
+																					removeTaskFromColumn({ columnId: id, taskIndex: index });
+																				}}
+																				className="bi bi-trash text-xl hover:opacity-60 cursor-pointer"
+																			></i>
 																		</div>
 																	</div>
 																);
@@ -152,7 +200,13 @@ function App() {
 													{/* <p className="text-gray-500 hover:text-black cursor-pointer">
 														<i class="bi bi-plus-lg"></i> New Task
 													</p> */}
-													<AddTaskControl columnId={id} clickedColumnId={selectedColumn} isAdding={addingNewTask} changeNewTaskStatus={changeNewTaskStatus} addNewTodoIntoColumn={addNewTodoIntoColumn} />
+													<AddTaskControl
+														columnId={id}
+														clickedColumnId={selectedColumn}
+														isAdding={addingNewTask}
+														changeNewTaskStatus={changeNewTaskStatus}
+														addNewTodoIntoColumn={addNewTodoIntoColumn}
+													/>
 												</div>
 											</div>
 											{/* <div className="mt-2">
