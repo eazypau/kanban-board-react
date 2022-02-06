@@ -1,29 +1,14 @@
 // import { useRef } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import AddTaskControl from "./components/AddTaskControl";
 
+const LOCAL_STORAGE_KEY = "kanban-todos"
 function App() {
-	// todo: make it save and read from localstorage
-	const dummyTasks = [
-		{ id: String(Math.random()), content: "task 1" },
-		{ id: String(Math.random()), content: "task 2" },
-		{ id: String(Math.random()), content: "task 3" },
-		{
-			id: String(Math.random()),
-			content:
-				"Lorem ipsum dolor sit amet consectetur adipisicing elit. Molestiae obcaecati alias numquam molestias reiciendis architecto labore optio sed, nesciunt porro voluptatem vitae in maiores culpa, doloremque eos! Veritatis, esse totam!",
-		},
-		{
-			id: String(Math.random()),
-			content:
-				"Lorem ipsum dolor sit amet consectetur adipisicing elit. Molestiae obcaecati alias numquam molestias reiciendis architecto labore optio sed, nesciunt porro voluptatem vitae in maiores culpa, doloremque eos! Veritatis, esse totam!",
-		},
-	];
 	const columnsList = {
 		columnOne: {
 			name: "Tasks",
-			items: dummyTasks,
+			items: [],
 		},
 		columnTwo: {
 			name: "In Progress",
@@ -39,15 +24,27 @@ function App() {
 		},
 	};
 	const [columns, setColumns] = useState(columnsList);
-	const [addingNewTask, setAddingNewTask] = useState(false);
 	const [selectedColumn, setSelectedColumn] = useState("");
+	const [selectedTaskId, setSelectedTaskId] = useState("");
+	const [taskInput, setTaskInput] = useState("");
+
+	useEffect(() => {
+		const storedTask = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY))
+		if (storedTask) setColumns(storedTask)
+	}, []);
+	useEffect(() => {
+		localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(columns))
+	}, [columns]);
 
 	const changeNewTaskStatus = (selectedId) => {
 		// console.log("changing..........");
-		setSelectedColumn(selectedId);
-		addingNewTask ? setAddingNewTask(false) : setAddingNewTask(true);
-		// console.log("...",addingNewTask);
+		selectedColumn ? setSelectedColumn("") : setSelectedColumn(selectedId);
 		// console.log("...", selectedColumn);
+	};
+	const handleTaskInput = (event) => {
+		// console.log("on input");
+		setTaskInput(event.target.value);
+		// console.log(taskInput);
 	};
 	const addNewTodoIntoColumn = (content, columnId) => {
 		// console.log("content:", content,  "columnId", columnId);
@@ -66,10 +63,37 @@ function App() {
 		});
 		// clear selectedColumn
 		setSelectedColumn("");
-		setAddingNewTask(false);
+	};
+	const editTaskContent = (taskId, content) => {
+		// console.log("editting");
+		const selectedId = taskId;
+		setSelectedTaskId(selectedId);
+		setTaskInput(content);
+	};
+	const cancelEditting = () => {
+		// console.log("cancel");
+		setTaskInput("");
+		setSelectedTaskId("");
+	};
+	const updateTaskContent = ({ columnId, taskIndex }) => {
+		console.log("updating");
+		// make copies
+		const sourceColumn = columns[columnId];
+		const sourceItems = [...sourceColumn.items];
+		const selectedTask = sourceItems[taskIndex];
+		if (selectedTask.content === taskInput) {
+			cancelEditting();
+			return;
+		}
+		// edit that specific task
+		selectedTask.content = taskInput;
+		// replace the item in column's items
+		sourceItems.splice(taskIndex, 0, selectedTask);
+		// once done, reset taskInput and selectedTaskId to its original state
+		cancelEditting();
 	};
 	const moveTaskToCompleted = ({ columnId, taskIndex }) => {
-		console.log("completed");
+		// console.log("completed");
 		const sourceColumn = columns[columnId];
 		const sourceItems = [...sourceColumn.items];
 		const destColumn = columns.columnFour;
@@ -91,8 +115,8 @@ function App() {
 			},
 		});
 	};
-	const removeTaskFromColumn = ({columnId, taskIndex}) => {
-		console.log("removing task");
+	const removeTaskFromColumn = ({ columnId, taskIndex }) => {
+		// console.log("removing task");
 		const sourceColumn = columns[columnId];
 		const sourceItems = [...sourceColumn.items];
 		const [removed] = sourceItems.splice(taskIndex, 1);
@@ -106,7 +130,7 @@ function App() {
 		});
 	};
 	const onDragEnd = (result, columns, setColumns) => {
-		console.log(result);
+		// console.log(result);
 		if (!result.destination) return;
 		// extract source and destination from result
 		const { source, destination } = result;
@@ -146,11 +170,11 @@ function App() {
 			});
 		}
 	};
-	// const [columns, setColumns] = useState(columnsList);
+
 	return (
-		<div className="py-10 px-10 bg-green-200 h-screen">
+		<div className="py-10 px-2 xl:px-10 bg-green-200 h-screen">
 			<h1 className="text-center text-5xl font-bold py-5 rounded-md bg-green-100 shadow">Task List</h1>
-			<div className="mt-8 grid grid-cols-4 gap-x-5" style={{ height: "85%" }}>
+			<div className="mt-8 grid grid-cols-4 gap-x-2 xl:gap-x-5" style={{ height: "85%" }}>
 				{/* id in Droppable and Draggable must be a string */}
 				{/* cannot directly style Droppable and Draggable */}
 				<DragDropContext onDragEnd={(result) => onDragEnd(result, columns, setColumns)}>
@@ -174,9 +198,24 @@ function App() {
 																		{...provided.dragHandleProps}
 																		className="w-full h-36 mt-2 bg-yellow-200 rounded px-4 py-2 relative"
 																	>
-																		<p className="h-24 overflow-auto example">{item.content}</p>
-																		<div className="absolute bottom-0 right-0 mr-2 mb-1">
-																			<i className="bi bi-pencil-square mr-2 text-xl hover:opacity-60 cursor-pointer"></i>
+																		<p className={"h-24 overflow-auto example " + (item.id === selectedTaskId ? "hidden" : "")}>
+																			{item.content}
+																		</p>
+																		<textarea
+																			autoFocus
+																			value={taskInput}
+																			onChange={handleTaskInput}
+																			className={
+																				"bg-yellow-50 w-full h-4/5 resize-none p-1 " + (item.id === selectedTaskId ? "" : "hidden")
+																			}
+																		></textarea>
+																		<div className={"absolute bottom-0 right-0 mr-2 mb-1 " + (item.id === selectedTaskId ? "hidden" : "")}>
+																			<i
+																				onClick={() => {
+																					editTaskContent(item.id, item.content);
+																				}}
+																				className="bi bi-pencil-square mr-2 text-xl hover:opacity-60 cursor-pointer"
+																			></i>
 																			<i
 																				onClick={() => {
 																					moveTaskToCompleted({ columnId: id, taskIndex: index });
@@ -189,6 +228,15 @@ function App() {
 																				}}
 																				className="bi bi-trash text-xl hover:opacity-60 cursor-pointer"
 																			></i>
+																		</div>
+																		<div className={"absolute bottom-0 right-0 mr-4 mb-1 " + (item.id === selectedTaskId ? "" : "hidden")}>
+																			<i
+																				onClick={() => {
+																					updateTaskContent({ columnId: id, taskIndex: index });
+																				}}
+																				className="bi bi-check-circle text-xl mr-2 cursor-pointer hover:opacity-60"
+																			></i>
+																			<i onClick={cancelEditting} className="bi bi-x-circle text-xl cursor-pointer hover:opacity-60"></i>
 																		</div>
 																	</div>
 																);
@@ -203,7 +251,6 @@ function App() {
 													<AddTaskControl
 														columnId={id}
 														clickedColumnId={selectedColumn}
-														isAdding={addingNewTask}
 														changeNewTaskStatus={changeNewTaskStatus}
 														addNewTodoIntoColumn={addNewTodoIntoColumn}
 													/>
