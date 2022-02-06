@@ -69,13 +69,12 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
 
-## Features to create
-- reorder tasks
+## Features
 - mark as complete
 - drag and drop
 - delete task
-- edit task (double click)
+- edit task
 - add new task
 
-## Resource
+## Resource and Reference
 - [Build a beautiful, draggable kanban board with react-beautiful-dnd](https://www.youtube.com/watch?v=Vqa9NMzF3wc&list=WL&index=2&t=76s&ab_channel=LogRocket)
